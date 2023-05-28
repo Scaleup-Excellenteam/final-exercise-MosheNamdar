@@ -1,11 +1,17 @@
+import os
 from pptx import Presentation
 import openai
 import asyncio
 import collections.abc
 import json
 from os import path
+from dotenv import load_dotenv
+from datetime import datetime, timedelta
 
-#KEY =
+load_dotenv()
+KEY = os.environ.get("KEY")
+
+numbers_of_requests = 0
 
 
 def save_answer_on_json_file(answer, jason_file_name):
@@ -14,20 +20,28 @@ def save_answer_on_json_file(answer, jason_file_name):
 
 async def generate_answer_gpt(slides):
     openai.api_key = KEY
+    global numbers_of_requests
 
     request = "Hi,could you please summarize the following slides for me?\n"
-    for slide in slides:
+    for i, slide in enumerate(slides):
         request += slide
+        response = await asyncio.to_thread(openai.ChatCompletion.create,
+                                           model="gpt-3.5-turbo",
+                                           messages=[
+                                               {"role": "system", "content": request},
+                                           ],
+                                           max_tokens=1000)
 
-    response = await asyncio.to_thread(openai.ChatCompletion.create,
-                                       model="gpt-3.5-turbo",
-                                       messages=[
-                                           {"role": "system", "content": request},
-                                       ],
-                                       max_tokens=1000)
+        answer = response.choices[0].message.content.strip()
+        answer = answer.replace(". ", ".\n")
+        numbers_of_requests += 1
+        prev_request_time = datetime.now()
 
-    answer = response.choices[0].message.content.strip()
-    answer = answer.replace(". ", ".\n")
+        if i < len(slides) - 1 and numbers_of_requests % 3 == 0:
+            time_left = timedelta(minutes=1) - (datetime.now() - prev_request_time)
+
+            if time_left.total_seconds() > 0:
+                await asyncio.sleep(time_left.total_seconds())
 
     return answer
 
