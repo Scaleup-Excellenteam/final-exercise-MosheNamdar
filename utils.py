@@ -1,4 +1,5 @@
 import json
+import os
 from os import path
 
 
@@ -10,6 +11,8 @@ def save_answer_on_json_file(answer, json_file_name):
         answer (str): The answer to be saved.
         json_file_name (str): The name of the JSON file.
     """
+    output_folder = os.path.abspath('outputs')
+    os.makedirs(output_folder, exist_ok=True)
     json.dump(answer, open(json_file_name, "w"))
 
 
@@ -24,4 +27,6 @@ def get_output_file_name(pptx_file_name):
         str: The output file name.
     """
     output_file_name = path.splitext(pptx_file_name)[0] + ".json"
-    return output_file_name
+    file_path = "outputs\ " + output_file_name
+    file_path2 = "".join(file_path.split())
+    return file_path2
