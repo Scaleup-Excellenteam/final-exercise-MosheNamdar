@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>File Upload</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <style>
+        body {
+            padding: 20px;
+        }
+        .custom-container {
+            max-width: 500px;
+            margin: 0 auto;
+            background-color: #f8f9fa;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            padding: 20px;
+        }
+        .custom-container h1 {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .custom-form {
+            margin-bottom: 20px;
+        }
+        .custom-form label {
+            font-weight: bold;
+        }
+        .custom-form input[type="file"] {
+            margin-top: 5px;
+        }
+        .custom-message {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .custom-message a {
+            margin-top: 10px;
+        }
+        .custom-error {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #721c24;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        .custom-status-form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .custom-status-form label {
+            margin-bottom: 5px;
+        }
+        .custom-status-form .form-line {
+            width: 100%;
+            height: 1px;
+            background-color: #ced4da;
+            margin: 10px 0;
+        }
+        .custom-status-form input[type="text"] {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="custom-container">
+        <h1>Upload a File</h1>
+        <form class="custom-form" method="POST" enctype="multipart/form-data" action="/">
+            <div class="form-group">
+                <label for="fileInput">Select a File</label>
+                <input type="file" class="form-control-file" id="fileInput" name="file">
+            </div>
+            <button type="submit" class="btn btn-primary">Upload</button>
+        </form>
+        {% if message %}
+            <p class="custom-message">{{ message }}</p>
+            {% if uid %}
+                <div class="custom-status-form">
+                    <label for="uidInput">UID:</label>
+                    <span>{{ uid }}</span>
+                    <br> </br>
+                    <div class="form-line"></div>
+                    <label for="uidInput">Enter UID:</label>
+
+
+        <form method="POST" action="{{ url_for('status') }}">
+            <div class="form-group">
+                <input type="text" class="form-control" id="uidInput" name="uid">
+            </div>
+            <div id="uidError" class="alert alert-danger mt-2" style="display: none;"></div>
+
+            <button type="submit" class="btn btn-primary">Get Status</button>
+        </form>
+
+
+
+
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script>
+        function showStatus() {
+            var uid = document.getElementById("uidInput").value;
+            if (uid) {
+                window.location.href = "/status?filename=" + uid;
+            }
+        }
+    </script>
+</body>
+</html>
