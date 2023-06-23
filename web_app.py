@@ -4,7 +4,7 @@ from datetime import datetime
 import uuid
 import json
 import re
-
+from db import session, User, Upload
 
 app = Flask(__name__)
 
@@ -13,7 +13,7 @@ UPLOAD = 'uploads'
 PENDING = 'pending'
 DONE = 'outputs'
 
-app.config['UPLOAD_FOLDER'] = UPLOAD
+app.config['UPLOAD'] = UPLOAD
 
 if not os.path.exists(UPLOAD):
     os.makedirs(UPLOAD)
@@ -44,16 +44,82 @@ def index():
 
         if file and is_valid_file(file.filename):
             filename = generate_custom_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            regex = r'(.+?)_\d{14}_(\w+)\.pptx'
-            match = re.search(regex, filename)
+            file.save(os.path.join(app.config['UPLOAD'], filename))
+            # regex = r'(.+?)_\d{14}_(\w+)\.pptx'
+            # match = re.search(regex, filename)
             # print(match)
-            extracted_string = match.group(2)
+            # extracted_string = match.group(2)
             # print(extracted_string)
 
-            return render_template('upload_page.html', message='File uploaded successfully.', uid=extracted_string)
+            uid = filename.split('.')[0]
+            user_email = request.form.get('email')
+            original_file_name = os.path.basename(file.filename)
+            # uid2 = uid.split('_')[2]
+            # print(user_email)
+            # print(uid2)
+            save_on_db(uid, user_email, original_file_name)
+
+            return render_template('upload_page.html', message='File uploaded successfully!', uid=uid)
 
     return render_template('upload_page.html')
+
+
+# def save_on_db(uid, user_email, filename):
+#     if user_email:
+#         # Check if the email already exists in the Users table
+#         existing_user = session.query(User).filter_by(email=user_email).first()
+#         if existing_user:
+#             # User already exists, create an Upload associated with the user
+#             upload = Upload(uid=uid, filename=filename, status=get_status(filename), user_id=existing_user.id)
+#             upload.set_finish_time()
+#         else:
+#             # User doesn't exist, create a new User and an associated Upload
+#             new_user = User(email=user_email)
+#             session.add(new_user)
+#             session.commit()
+#             print(existing_user.id)
+#             upload = Upload(uid=uid, filename=filename, status=get_status(filename), user_id=new_user.id)
+#             upload.set_finish_time()
+#
+#         session.add(upload)
+#         session.commit()
+#
+#     else:
+#         # User did not provide an email, create Upload without User
+#         upload = Upload(uid=uid, filename=filename, status=get_status(filename))
+#         upload.set_finish_time()
+#         session.add(upload)
+#         session.commit()
+
+def save_on_db(uid, user_email, filename):
+    print(filename)
+    if user_email:
+        # Check if the email already exists in the Users table
+        existing_user = session.query(User).filter_by(email=user_email).first()
+        if existing_user:
+            # User already exists, create an Upload associated with the user
+            upload = Upload(uid=uid, filename=filename, status=get_status(uid), user_id=existing_user.id)
+            upload.set_finish_time()
+        else:
+            # User doesn't exist, create a new User and an associated Upload
+            new_user = User(email=user_email)
+            session.add(new_user)
+            session.commit()
+            # Retrieve the newly created user from the session
+            new_user = session.query(User).filter_by(email=user_email).first()
+            upload = Upload(uid=uid, filename=filename, status=get_status(uid), user_id=new_user.id)
+            upload.set_finish_time()
+
+        session.add(upload)
+        session.commit()
+
+    else:
+        # User did not provide an email, create Upload without User
+        upload = Upload(uid=uid, filename=filename, status=get_status(uid))
+        upload.set_finish_time()
+        session.add(upload)
+        session.commit()
+
 
 
 def is_valid_file(filename):
@@ -102,6 +168,9 @@ def get_status(file_name):
     """
     pptx_filepath = os.path.join(DONE, os.path.splitext(file_name)[0] + '.pptx')
     json_filepath = os.path.join(DONE, os.path.splitext(file_name)[0] + '.json')
+
+    print(pptx_filepath)
+    print(json_filepath)
 
     if os.path.isfile(pptx_filepath):
         return 'done'
@@ -176,6 +245,8 @@ def status():
     """
     if request.method == 'POST':
         uid = request.form.get('uid')
+        if not uid:
+            return render_template('upload_page.html')
         file_name = find_file_name(uid)
         details = get_details(file_name)
         return render_template('status.html', data=details)
@@ -184,6 +255,8 @@ def status():
     if file_name:
         details = get_details(file_name)
         return render_template('status.html', data=details)
+
+
 
 
 def find_file_name(uid):
