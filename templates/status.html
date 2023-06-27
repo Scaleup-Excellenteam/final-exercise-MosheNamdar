@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>File Upload Status</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <style>
+        body {
+            padding: 20px;
+        }
+        .custom-container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .custom-heading {
+            margin-bottom: 20px;
+            text-align: center;
+            color: #337ab7;
+        }
+        .custom-table {
+            margin-bottom: 20px;
+        }
+        .custom-table thead {
+            background-color: #f8f9fa;
+        }
+        .custom-table th {
+            color: #337ab7;
+            font-weight: bold;
+        }
+        .custom-table td {
+            color: #555;
+        }
+        .custom-button {
+            display: block;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="custom-container">
+        <h1 class="custom-heading">File Upload Status</h1>
+        <table class="table table-striped table-bordered custom-table">
+            <thead>
+                <tr>
+                    <th>Filename</th>
+                    <th>Status</th>
+                    <th>Explanation</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ data.filename }}</td>
+                    <td>{{ data.status }}</td>
+                    <td>{{ data.explanation }}</td>
+                    <td>{{ data.timestamp }}</td>
+                </tr>
+            </tbody>
+        </table>
+        <button class="btn btn-primary custom-button" onclick="refreshStatus('{{ data.filename }}')">Refresh Status</button>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function refreshStatus(filename) {
+            location.reload();
+        }
+    </script>
+</body>
+</html>
+
