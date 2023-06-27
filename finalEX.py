@@ -10,6 +10,11 @@ from utils import save_answer_on_json_file
 async def main():
     """
     Main function to execute the program.
+
+    This function continuously scans the uploads folder for pending files.
+    It processes each pending file by generating answers using GPT for each slide in the presentation.
+    The answers are then saved in a JSON file and the status of the file is updated to 'done'.
+    The processed files are deleted from the uploads folder.
     """
     while True:
         asyncio.sleep(10)
@@ -38,6 +43,18 @@ async def main():
 
 
 def update_status(uid, status, upload_time=None, finish_time=None):
+    """
+    Update the status of the file with the given UID in the database.
+
+    Parameters:
+    - uid (str): The UID of the file.
+    - status (str): The new status to be set.
+    - upload_time (datetime): The upload time (optional).
+    - finish_time (datetime): The finish time (optional).
+
+    Returns:
+    - None.
+    """
     upload = session.query(Upload).filter_by(uid=uid).first()
     if upload:
         upload.status = status
@@ -51,6 +68,18 @@ def update_status(uid, status, upload_time=None, finish_time=None):
 
 
 def delete_file(file_to_delete):
+    """
+    Delete the file with the given name from the uploads folder.
+
+    Parameters:
+    - file_to_delete (str): The name of the file to be deleted.
+
+    Raises:
+    - FileNotFoundError: If the file is not found in the uploads folder.
+
+    Returns:
+    - None.
+    """
     uploads_folder = "uploads"
 
     file_path = os.path.join(uploads_folder, file_to_delete)

@@ -57,6 +57,17 @@ def index():
 
 
 def save_on_db(uid, user_email, filename):
+    """
+    Saves the file details in the database.
+
+    Parameters:
+    - uid (str): The unique ID associated with the file.
+    - user_email (str): The email of the user uploading the file.
+    - filename (str): The name of the file.
+
+    Returns:
+    - None.
+    """
     if user_email:
         # Check if the email already exists in the Users table
         existing_user = session.query(User).filter_by(email=user_email).first()
@@ -117,6 +128,15 @@ def generate_custom_filename(file_name):
 
 
 def get_status(file_name):
+    """
+    Retrieves the status of the file with the given name from the database.
+
+    Parameters:
+    - file_name (str): The name of the file.
+
+    Returns:
+    - The status of the file (str).
+    """
     try:
         upload = session.query(Upload).filter_by(uid=file_name).first()
         if upload:
@@ -129,6 +149,15 @@ def get_status(file_name):
 
 
 def get_details(file_name):
+    """
+    Retrieves the details of the file with the given name from the database.
+
+    Parameters:
+    - file_name (str): The name of the file.
+
+    Returns:
+    - A dictionary containing the file details (dict).
+    """
     try:
         upload = get_upload(file_name)
 
@@ -145,11 +174,29 @@ def get_details(file_name):
 
 
 def get_upload(file_name):
+    """
+    Retrieves the upload record associated with the file with the given name from the database.
+
+    Parameters:
+    - file_name (str): The name of the file.
+
+    Returns:
+    - The upload record (Upload) or None if not found.
+    """
     upload = session.query(Upload).filter_by(uid=file_name).first()
     return upload
 
 
 def get_explanation(file_name):
+    """
+    Retrieves the explanation text associated with the file with the given name.
+
+    Parameters:
+    - file_name (str): The name of the file.
+
+    Returns:
+    - The explanation text (str) or a message indicating that the explanation is pending or an error occurred.
+    """
     try:
         explanation_file_path = os.path.join(DONE, file_name) + '.json'
         if os.path.exists(explanation_file_path):
@@ -203,10 +250,23 @@ def status():
 
 
 class UIDNotFoundException(Exception):
+    """
+    Exception raised when a UID (unique ID) cannot be found for the given email and filename.
+    """
     pass
 
 
 def get_uid(email, filename):
+    """
+    Retrieves the UID (unique ID) associated with the given email and filename.
+
+    Parameters:
+    - email (str): The email of the user.
+    - filename (str): The name of the file.
+
+    Returns:
+    - The UID (str) or raises UIDNotFoundException if not found.
+    """
     try:
         user = session.query(User).filter_by(email=email).first()
         if user:

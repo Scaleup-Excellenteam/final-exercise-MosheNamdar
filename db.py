@@ -26,7 +26,6 @@ class Upload(Base):
     __tablename__ = 'uploads'
 
     id = mapped_column(Integer, primary_key=True, autoincrement=True)
-    # uid = mapped_column(String(36), default=str(uuid.uuid4()), nullable=False)
     uid = mapped_column(String(36), unique=True, nullable=False, default='')
     filename = mapped_column(String(255), nullable=False)
     upload_time = mapped_column(DateTime, nullable=False, default=datetime.now)

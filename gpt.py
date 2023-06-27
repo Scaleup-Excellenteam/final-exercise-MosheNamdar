@@ -18,6 +18,15 @@ last_request_time = 0
 
 
 async def generate_answer_gpt(slide):
+    """
+    Generates an answer for the given slide using the OpenAI GPT-3.5 Turbo model.
+
+    Parameters:
+    - slide (str): The slide content.
+
+    Returns:
+    - The generated answer (str).
+    """
     openai.api_key = KEY
     global numbers_of_requests, last_request_time
 
