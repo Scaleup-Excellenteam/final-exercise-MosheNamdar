@@ -21,5 +21,4 @@ def read_presentation(pptx_path):
                     text_slide += ph.text
         text.append(text_slide)
 
-    # print(text)
     return text

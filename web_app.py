@@ -1,13 +1,11 @@
-from flask import Flask, request, render_template
+import logging
+from flask import Flask, request, render_template, redirect, url_for
 import os
-from datetime import datetime
 import uuid
-import json
-import re
+from sqlalchemy import desc
 from db import session, User, Upload
 
 app = Flask(__name__)
-
 
 UPLOAD = 'uploads'
 PENDING = 'pending'
@@ -17,6 +15,9 @@ app.config['UPLOAD'] = UPLOAD
 
 if not os.path.exists(UPLOAD):
     os.makedirs(UPLOAD)
+
+if not os.path.exists(DONE):
+    os.makedirs(DONE)
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -45,18 +46,9 @@ def index():
         if file and is_valid_file(file.filename):
             filename = generate_custom_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD'], filename))
-            # regex = r'(.+?)_\d{14}_(\w+)\.pptx'
-            # match = re.search(regex, filename)
-            # print(match)
-            # extracted_string = match.group(2)
-            # print(extracted_string)
-
             uid = filename.split('.')[0]
             user_email = request.form.get('email')
             original_file_name = os.path.basename(file.filename)
-            # uid2 = uid.split('_')[2]
-            # print(user_email)
-            # print(uid2)
             save_on_db(uid, user_email, original_file_name)
 
             return render_template('upload_page.html', message='File uploaded successfully!', uid=uid)
@@ -64,35 +56,7 @@ def index():
     return render_template('upload_page.html')
 
 
-# def save_on_db(uid, user_email, filename):
-#     if user_email:
-#         # Check if the email already exists in the Users table
-#         existing_user = session.query(User).filter_by(email=user_email).first()
-#         if existing_user:
-#             # User already exists, create an Upload associated with the user
-#             upload = Upload(uid=uid, filename=filename, status=get_status(filename), user_id=existing_user.id)
-#             upload.set_finish_time()
-#         else:
-#             # User doesn't exist, create a new User and an associated Upload
-#             new_user = User(email=user_email)
-#             session.add(new_user)
-#             session.commit()
-#             print(existing_user.id)
-#             upload = Upload(uid=uid, filename=filename, status=get_status(filename), user_id=new_user.id)
-#             upload.set_finish_time()
-#
-#         session.add(upload)
-#         session.commit()
-#
-#     else:
-#         # User did not provide an email, create Upload without User
-#         upload = Upload(uid=uid, filename=filename, status=get_status(filename))
-#         upload.set_finish_time()
-#         session.add(upload)
-#         session.commit()
-
 def save_on_db(uid, user_email, filename):
-    print(filename)
     if user_email:
         # Check if the email already exists in the Users table
         existing_user = session.query(User).filter_by(email=user_email).first()
@@ -121,7 +85,6 @@ def save_on_db(uid, user_email, filename):
         session.commit()
 
 
-
 def is_valid_file(filename):
     """
     Checks if the given filename has a valid extension.
@@ -147,87 +110,58 @@ def generate_custom_filename(file_name):
     Returns:
     - The custom filename (str).
     """
-    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
     uid = str(uuid.uuid4().hex)
     filename_without_extension, extension = os.path.splitext(file_name)
-    new_filename = f"{filename_without_extension}_{timestamp}_{uid}{extension}"
+    new_filename = f"{uid}{extension}"
     return new_filename
 
 
 def get_status(file_name):
-    """
-    Gets the status of a file based on its name.
-
-    Parameters:
-    - file_name (str): The name of the file.
-
-    Returns:
-    - 'done' if the file exists in the 'outputs' folder as either a .pptx or .json file.
-    - 'pending' if the file exists in the 'pending' folder.
-    - 'not found' if the file does not exist.
-    """
-    pptx_filepath = os.path.join(DONE, os.path.splitext(file_name)[0] + '.pptx')
-    json_filepath = os.path.join(DONE, os.path.splitext(file_name)[0] + '.json')
-
-    print(pptx_filepath)
-    print(json_filepath)
-
-    if os.path.isfile(pptx_filepath):
-        return 'done'
-    elif os.path.isfile(json_filepath):
-        return 'done'
-    elif os.path.isfile(os.path.join(PENDING, file_name)):
-        return 'pending'
-    else:
+    try:
+        upload = session.query(Upload).filter_by(uid=file_name).first()
+        if upload:
+            return upload.status
+        else:
+            return 'pending'
+    except Exception as e:
+        print("Error: Failed to retrieve the file status. Reason: %s", str(e))
         return 'not found'
 
 
 def get_details(file_name):
-    """
-    Retrieves details about a file, including the status, original filename, timestamp, and explanation.
+    try:
+        upload = get_upload(file_name)
 
-    Parameters:
-    - file_name (str): The name of the file.
+        return {
+            'status': upload.status if upload else None,
+            'filename': upload.filename.split('_', 1)[0] if upload else None,
+            'timestamp': upload.upload_time if upload else None,
+            'explanation': get_explanation(file_name) if upload else None
+        }
+    except Exception as e:
+        # Handle any exceptions that may occur during the file details retrieval
+        print(f"An error occurred while retrieving file details: {str(e)}")
+        return {}
 
-    Returns:
-    - A dictionary containing the file details:
-        - 'status': The status of the file (str).
-        - 'filename': The original filename (str).
-        - 'timestamp': The formatted timestamp (str).
-        - 'explanation': The explanation data (dict) or None.
-    """
-    filename_without_extension, _ = os.path.splitext(file_name)
-    timestamp, uid = filename_without_extension.rsplit('_', 2)[-2:]
-    original_filename = filename_without_extension.split('_', 1)[0]
 
-    date_and_time = format_timestamp(timestamp)
-    the_status = get_status(file_name)
-    explanation = get_explanation(file_name)
-
-    return {'status': the_status, 'filename': original_filename, 'timestamp': date_and_time, 'explanation': explanation}
+def get_upload(file_name):
+    upload = session.query(Upload).filter_by(uid=file_name).first()
+    return upload
 
 
 def get_explanation(file_name):
-    """
-    Retrieves the explanation data from a .json file corresponding to the given file name.
-
-    Parameters:
-    - file_name (str): The name of the file.
-
-    Returns:
-    - The explanation data (dict) if the .json file exists and can be loaded successfully.
-    - None otherwise.
-    """
-    output_file_path = os.path.join(DONE, os.path.splitext(file_name)[0] + '.json')
-
     try:
-        with open(output_file_path, 'r') as file:
-            explanation_data = json.load(file)
-            return explanation_data
-    except FileNotFoundError:
-        return None
-    except json.JSONDecodeError:
-        return None
+        explanation_file_path = os.path.join(DONE, file_name) + '.json'
+        if os.path.exists(explanation_file_path):
+            with open(explanation_file_path, "r") as explanation_file:
+                explanation_text = explanation_file.read()
+            return explanation_text
+        else:
+            return "pending... try to refresh"
+    except Exception as ex:
+        # Handle any exceptions that may occur during the explanation retrieval
+        print(f"An error occurred while retrieving the file explanation: {str(ex)}")
+        return "An error occurred while retrieving the file explanation. Please try again later."
 
 
 @app.route('/status', methods=['GET', 'POST'])
@@ -245,58 +179,47 @@ def status():
     """
     if request.method == 'POST':
         uid = request.form.get('uid')
-        if not uid:
-            return render_template('upload_page.html')
-        file_name = find_file_name(uid)
-        details = get_details(file_name)
-        return render_template('status.html', data=details)
-
-    file_name = request.args.get('filename')
-    if file_name:
-        details = get_details(file_name)
-        return render_template('status.html', data=details)
-
-
-
-
-def find_file_name(uid):
-    """
-    Finds the file name that contains the given UID in its name.
-
-    Parameters:
-    - uid (str): The UID to search for.
-
-    Returns:
-    - The file name (str) if a matching file is found.
-    - None otherwise.
-    """
-    folders = ['uploads', 'pending', 'outputs']
-    for folder in folders:
-        for root, dirs, files in os.walk(folder):
-            for file_name in files:
-                if uid in file_name:
-                    return os.path.basename(file_name)
+        email = request.form.get('email')
+        filename = request.form.get('filename')
+        if uid:
+            try:
+                file_details = get_details(uid)
+                return render_template('status.html', data=file_details)
+            except Exception as e:
+                print(f"An error occurred while retrieving file status: {str(e)}")
+                return redirect(url_for('index', error='An error occurred while retrieving file status'))
+        elif email and filename:
+            try:
+                uid = get_uid(email, filename)
+                file_details = get_details(uid)
+                return render_template('status.html', data=file_details)
+            except Exception as e:
+                print(f"An error occurred while retrieving file status: {str(e)}")
+                return redirect(url_for('index', error='An error occurred while retrieving file status'))
+        else:
+            return redirect(url_for('index', error='UID or Email & Filename not provided'))
+    else:
+        return render_template('index.html')
 
 
-def format_timestamp(timestamp):
-    """
-    Formats the timestamp string into a specific format.
+class UIDNotFoundException(Exception):
+    pass
 
-    Parameters:
-    - timestamp (str): The timestamp to format.
 
-    Returns:
-    - The formatted timestamp (str) in the format: "YYYY-MM-DD at HH:MM:SS" if successful.
-    - None if an IndexError or TypeError occurs during formatting.
-    """
+def get_uid(email, filename):
     try:
-        formatted_timestamp = "{}-{}-{} at {}:{}:{}".format(
-            timestamp[:4], timestamp[4:6], timestamp[6:8],
-            timestamp[8:10], timestamp[10:12], timestamp[12:14]
-        )
-        return formatted_timestamp
-    except (IndexError, TypeError):
-        return None
+        user = session.query(User).filter_by(email=email).first()
+        if user:
+            last_upload = session.query(Upload).filter_by(filename=filename, user=user).order_by(
+                desc(Upload.upload_time)).first()
+
+            if last_upload:
+                return last_upload.uid
+
+        raise UIDNotFoundException("No matching record found for the given email and filename")
+    except Exception as e:
+        logging.error(f"An error occurred while retrieving UID: {str(e)}")
+        raise UIDNotFoundException("An error occurred while retrieving UID")
 
 
 if __name__ == '__main__':

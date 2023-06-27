@@ -2,119 +2,151 @@
 <html>
 <head>
     <title>File Upload</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
         body {
-            padding: 20px;
-        }
-        .custom-container {
-            max-width: 500px;
-            margin: 0 auto;
             background-color: #f8f9fa;
-            border: 1px solid #ced4da;
+            padding-top: 40px;
+        }
+
+        .container {
+            max-width: 500px;
+            background-color: #ffffff;
             border-radius: 5px;
-            padding: 20px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            margin: 0 auto;
         }
-        .custom-container h1 {
-            margin-bottom: 20px;
+
+        h1 {
             text-align: center;
+            margin-bottom: 40px;
+            color: #0d6efd;
         }
-        .custom-form {
-            margin-bottom: 20px;
-        }
-        .custom-form label {
+
+        .form-group label {
             font-weight: bold;
+            color: #212529;
         }
-        .custom-form input[type="file"] {
-            margin-top: 5px;
+
+        .btn-primary {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
         }
-        .custom-message {
-            text-align: center;
-            margin-bottom: 20px;
+
+        .btn-primary:hover {
+            background-color: #0b5ed7;
+            border-color: #0b5ed7;
         }
-        .custom-message a {
-            margin-top: 10px;
-        }
-        .custom-error {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #721c24;
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
-            border-radius: 5px;
+
+        .alert {
+            margin-top: 20px;
             padding: 10px;
+            border-radius: 5px;
         }
-        .custom-status-form {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 20px;
+
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-color: #f5c6cb;
         }
-        .custom-status-form label {
-            margin-bottom: 5px;
-        }
-        .custom-status-form .form-line {
-            width: 100%;
-            height: 1px;
-            background-color: #ced4da;
-            margin: 10px 0;
-        }
-        .custom-status-form input[type="text"] {
-            margin-bottom: 10px;
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border-color: #c3e6cb;
         }
     </style>
-</head>
-<body>
-    <div class="custom-container">
-        <h1>Upload a File</h1>
-        <form class="custom-form" method="POST" enctype="multipart/form-data" action="/">
-            <div class="form-group">
-                <label for="fileInput">Select a File</label>
-                <input type="file" class="form-control-file" id="fileInput" name="file">
-            </div>
-             <div class="form-group">
-                <label for="emailInput">Email(optional):</label>
-                <input type="email" class="form-control" id="emailInput" name="email">
-            </div>
-            <button type="submit" class="btn btn-primary">Send</button>
-        </form>
-        {% if message %}
-            <p class="custom-message">{{ message }}</p>
-            {% if uid %}
-                <div class="custom-status-form">
-                    <label for="uidInput">UID:</label>
-                    <span>{{ uid }}</span>
-                    <br> </br>
-                    <div class="form-line"></div>
-                    <label for="uidInput">Enter UID:</label>
-
-
-        <form method="POST" action="{{ url_for('status') }}">
-            <div class="form-group">
-                <input type="text" class="form-control" id="uidInput" name="uid">
-            </div>
-            <div id="uidError" class="alert alert-danger mt-2" style="display: none;"></div>
-
-            <button type="submit" class="btn btn-primary">Get Status</button>
-        </form>
-
-
-
-
-                </div>
-            {% endif %}
-        {% endif %}
-    </div>
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
     <script>
-        function showStatus() {
-            var uid = document.getElementById("uidInput").value;
-            if (uid) {
-                window.location.href = "/status?filename=" + uid;
+        function copyUid() {
+            var uidInput = document.getElementById("uidInput");
+            uidInput.select();
+            document.execCommand("copy");
+        }
+
+        function handleOptionChange() {
+            var uidForm = document.getElementById("uidForm");
+            var fileEmailForm = document.getElementById("fileEmailForm");
+
+            var optionUid = document.getElementById("optionUid");
+            var optionFilenameEmail = document.getElementById("optionFilenameEmail");
+
+            if (optionUid.checked) {
+                uidForm.style.display = "block";
+                fileEmailForm.style.display = "none";
+            } else if (optionFilenameEmail.checked) {
+                uidForm.style.display = "none";
+                fileEmailForm.style.display = "block";
             }
         }
     </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Upload a File</h1>
+        <form method="POST" enctype="multipart/form-data" action="/">
+            <div class="mb-3">
+                <label for="fileInput" class="form-label">Select a File</label>
+                <input type="file" class="form-control" id="fileInput" name="file">
+            </div>
+            <div class="mb-3">
+                <label for="emailInput" class="form-label">Email Address (optional)</label>
+                <input type="email" class="form-control" id="emailInput" name="email">
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Upload</button>
+        </form>
+        {% if message %}
+            <div class="alert alert-success mt-4">
+                <p>{{ message }}</p>
+                <p>Your UID is:</p>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="uidInput" name="uid" value="{{ uid }}" readonly>
+                    <button class="btn btn-primary" onclick="copyUid()">Copy</button>
+                </div>
+            </div>
+        {% endif %}
+        <form method="POST" action="{{ url_for('status') }}">
+            <div class="mb-3 mt-4">
+                <label>Choose an Option:</label><br>
+                <div class="form-check form-check-inline">
+                    <input type="radio" class="form-check-input" id="optionUid" name="option" value="uid" onchange="handleOptionChange()">
+                    <label class="form-check-label" for="optionUid">Use UID</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input type="radio" class="form-check-input" id="optionFilenameEmail" name="option" value="filename_email" onchange="handleOptionChange()">
+                    <label class="form-check-label" for="optionFilenameEmail">Use Filename and Email</label>
+                </div>
+            </div>
+
+            <div class="mb-3" id="uidForm" style="display: none;">
+                <label for="uidInput">Enter UID</label>
+                <input type="text" class="form-control" id="uidInputStatus" name="uid">
+            </div>
+
+            <div class="mb-3" id="fileEmailForm" style="display: none;">
+                <label for="filenameInput">Filename</label>
+                <input type="text" class="form-control" id="filenameInput" name="filename">
+                <label for="statusEmailInput">Email Address</label>
+                <input type="email" class="form-control" id="statusEmailInput" name="email">
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Get Status</button>
+        </form>
+
+        {% if error %}
+            <div class="alert alert-danger mt-4">
+                <p>{{ error }}</p>
+            </div>
+        {% endif %}
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
+
+
+
+
+
+

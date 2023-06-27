@@ -1,12 +1,16 @@
 import os
-
-from sqlalchemy import create_engine, Column, ForeignKey, Integer, String, DateTime
+from sqlalchemy import create_engine, ForeignKey, Integer, String, DateTime
 from sqlalchemy.orm import relationship, sessionmaker, mapped_column
 from sqlalchemy.ext.declarative import declarative_base
-import uuid
 from datetime import datetime
 
 Base = declarative_base()
+
+
+DB_PATH = os.path.join("db", "database.db")
+folder_path = os.path.dirname(DB_PATH)
+if not os.path.exists(folder_path):
+    os.makedirs(folder_path)
 
 
 class User(Base):
@@ -57,31 +61,3 @@ Base.metadata.create_all(engine)
 # Create a session to interact with the database
 Session = sessionmaker(bind=engine)
 session = Session()
-
-# -------------------------------------------
-# user_email = input("Enter your email (optional): ").strip()
-#
-# if user_email:
-#     # Check if the email already exists in the Users table
-#     existing_user = session.query(User).filter_by(email=user_email).first()
-#
-#     if existing_user:
-#         # User already exists, create an Upload associated with the user
-#         upload = Upload(filename="a.txt", status="done", user_id=existing_user.id)
-#         upload.set_finish_time()
-#     else:
-#         # User doesn't exist, create a new User and an associated Upload
-#         new_user = User(email=user_email)
-#         session.add(new_user)
-#         session.commit()
-#         upload = Upload(filename="a.txt", status="done", user_id=new_user.id)
-#         upload.set_finish_time()
-#
-#     session.add(upload)
-#     session.commit()
-# else:
-#     # User did not provide an email, create Upload without User
-#     upload = Upload(filename="a.txt", status="done")
-#     upload.set_finish_time()
-#     session.add(upload)
-#     session.commit()
